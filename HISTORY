@@ -1,3 +1,10 @@
+TAG: lib_java_seqfilter-1-0-9
+DATE: 01/27/2005
+STAFF: sc
+RELEASE:
+CHANGES: TR6341
+1) DEPENDENCIES and SeqRecordFilter - removed dependency to jakarta regex
+
 TAG: lib_java_seqfilter-1-0-8
 DATE: 02/12/2002
 STAFF: sc
