@@ -1,3 +1,11 @@
+TAG: lib_java_seqfilter-1-0-11
+DATE: 02/08/2005
+STAFF: sc
+RELEASE:
+CHANGES: TR6341
+1) DEPENDENCIES - updated getopt version, added lib_java_core (
+removed shrdbutils and shrunix which have been moved into core)
+
 TAG: lib_java_seqfilter-1-0-10
 DATE: 02/08/2005
 STAFF: sc
