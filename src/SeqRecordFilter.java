@@ -103,8 +103,8 @@ public class SeqRecordFilter
         // Effects: catches IOException, InterruptedException 
 	//	    write exception message to stderr
 	//	    and exits. See the go() method for description of Exceptions
-	//          writes error message to stderr if command line errors or 
-	//          invalid options in 'args'
+	//          writes error message to stderr and exits if command line 
+	//          error or invalid options in 'args'
         // Throws:  nothing
         // Notes:
 	//	//
@@ -125,8 +125,8 @@ public class SeqRecordFilter
 	//		-) deciderName is a decider supported by the app using
 	//                   this class 
 	//		-) -d means outputLocation is a directory 
-	//                   in this case each sequence will be written to its
-	//                   own file in the directory
+	//                   in this case each sequence will be written to a
+	//                   file named seqid.version in the directory
 	//		-) -o means outputLocation is a file to overwrite
 	//		-) -a means outputLocationis a file to append
 	//                   in the above two cases all sequences passing the 
@@ -166,27 +166,17 @@ public class SeqRecordFilter
 		    Since we are doing the same thing for all the options
 		      we assign the int 2 to each LongOpt.
 		*/
-		LongOpt[] longopts = {
-		    new LongOpt("mouse", LongOpt.NO_ARGUMENT, null, 2),
-    		    new LongOpt("mousedna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("mousemrna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("rat", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("ratdna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("ratmrna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("rodent", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("human", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("humandna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("humanmrna", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("genbank", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("sprot", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("stsmouse", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("mouseBAC", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("nonhumanmouserat", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("rikenSingleMarker", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("gbSingleMarker", LongOpt.NO_ARGUMENT, null, 2)};
+		// Dynamically create the list of long options based on the full
+		// set of deciders for this filter 
+		LongOpt[] longopts =  new LongOpt[sd.length];
+		for (int i = 0; i < sd.length; i++)
+		{
+			longopts[i] = new LongOpt(sd[i].getName(), 
+				LongOpt.NO_ARGUMENT, null, 2);
+		}
 
 		/* create a Getopt object passing it:
-		   1) The name to display as the program name when logging
+		   1) Error message for logging
 		   2) The args
 		   3) description of valid options 
 		   4) description of valid long options
@@ -210,8 +200,10 @@ public class SeqRecordFilter
 			case 2:
 			    if(haveDecider == true)
 			    {
-				System.err.println("ERROR:Don't have a writer " 
-					 + "for last Decider!!");
+				throw new IOException(
+					"Error in getargs(): " +
+                                	"Command line args out of order." +
+					" No writer for last decider");
 			    }
 			    else
 			    {
@@ -222,23 +214,41 @@ public class SeqRecordFilter
 					// command line long option, place
 					// that Decider object in 'deciders
 		    			// ForThisFilterRun' array
-				    if(sd[i].getName().equals(
+				    if(sd[i].getName().trim().equals(
 					longopts[g.getLongind()].getName() ))
 			       	    {
 					this.decidersForThisFilterRun[
 					    this.deciderCtr] = sd[i];
+
+					// increment the Decider object count
+					this.deciderCtr++;
+
+					// we have a Decider
+					haveDecider = true;
+					break;
 				    }
-			        }
-			        // we have a Decider
-				haveDecider = true;
+				}
+			    }	
+			    // check to be sure  we have a decider - if not the 
+			    // command line decider is not in 'sd'
+			    if(haveDecider == false)
+			    {
+			        throw new IOException(
+				    "Error in getargs(): "+
+				    "No decider match for: " + c);	
+			    }
+			    else
+			    {
 			        break;
-			    } 
+			    }
 
 			case 'a':
 			    if(haveDecider == false)
 			    {
-				System.err.println("ERROR in getArgs(): " +
-                                        "Don't have a Decider!!");
+				throw new IOException(
+                                        "Error in getargs(): " + 
+                                        " No decider for: " + 
+					g.getOptarg());
 			    }  
 			    else
 			    {
@@ -253,16 +263,16 @@ public class SeqRecordFilter
 				// we are now expecting a Decider
 				haveDecider = false; 	
 				
-				// increment the Decider object count
-				this.deciderCtr++;
 			    }
 			    break;
 
 			case 'o':
 			    if(haveDecider == false)
                             {
-                                System.err.println("ERROR in getArgs(): " +
-					"Don't have a decider!!");
+				throw new IOException(
+                                        "Error in getargs(): " +
+                                        " No decider for: " + 
+                                        g.getOptarg());
                             }
                             else
                             {
@@ -277,15 +287,15 @@ public class SeqRecordFilter
 				// we are now expecting a Decider
 				haveDecider = false;    
 			
-				// increment the Decider object count
-                                this.deciderCtr++;           
                             }
                             break;
 			case 'd':
 			    if(haveDecider == false)
-                            {
-                                System.err.println("ERROR in getArgs(): " +
-                                        "Don't have a decider!!");
+                            {	
+				throw new IOException(
+                                        "Error in getargs(): " +
+                                        " No decider for: " + 
+                                        g.getOptarg());
                             }
 			    else
 			    {
@@ -298,24 +308,31 @@ public class SeqRecordFilter
 				// we are now expecting a Decider
                                 haveDecider = false;
 
-                                // increment the Decider object count
-                                this.deciderCtr++;
 			    }
 			    break;
+			// getopt returns ':' if an invalid option is specified
+			// works with short and long options
 			case ':':
 				throw new IOException(
-					"Missing argument for option");
-
+					"Error in getargs(): " +
+					"Missing required argument for option");
+			
+			// getopt returns '?' if a required option argument is
+			// missing. works with short and long options
 			case '?':
-				throw new IOException("Invalid option");
+				throw new IOException("Error in getargs(): " +
+					"Invalid option");
 
+			// we are returning all options/args in order on the cmd
+			// line. If non-option element is encountered, an 
+			// integer 1 is returned and the value of that 
+			// non-option element is stored in optarg as if it were 
+			// the argument to that option. Since we don't use args
+			// without options we throw an exception here.
 			default:
-			    System.err.println("Error getopt() returned: " + 
-				c + "if 1 a non-opt" +
-				" arg element was found, its value is: " +
-				g.getOptarg());
-			     
-				
+			    throw new IOException("Error in getArgs: " + 
+				"Non option element found on command line: " +
+				c + " its value is: " + g.getOptarg());
 		    }
 		}
 	    }
@@ -446,7 +463,6 @@ public class SeqRecordFilter
 
 	    try
 	    {		
-		//System.out.println("in processRecord");
 	        // loop through the Deciders for this filter run
             	for(int i = 0; i < this.deciderCtr; i++)
             	{
@@ -454,7 +470,6 @@ public class SeqRecordFilter
                     if(this.decidersForThisFilterRun[i].isA(
                             this.seqRec) == true)
                     {
-			//System.out.println("SeqId in ProcessRecord = " + (String)(this.seqRec.getSeqIds()).get(0));
 			// if seqOutput[i] is type File then we write 
 			// the seqRec text to its own file
 			if(this.seqOutput.get(i) instanceof File)
