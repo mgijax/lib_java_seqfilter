@@ -1,3 +1,13 @@
+TAG: lib_java_seqfilter-1-0-4
+DATE: 01/10/2002
+STAFF: sc
+RELEASE:
+CHANGES: 
+1) Added Install script 
+2) SeqRecordFilter.java - added another getArgs() to parse decider/outputDir
+   pairs. Added anoather processRecord() to output records found by decider to 
+   individual files in outputDir 
+
 TAG: lib_java_seqfilter-1-0-3
 DATE: 12/21/2001
 STAFF: sc, blk
