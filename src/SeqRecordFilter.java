@@ -302,16 +302,11 @@ public class SeqRecordFilter
 	//	    file writer arrays
         // Effects: writes to log files and sequence output files
 	//	    reads sequence records from stdin to EOF
-        // 	    catches EOF, RESyntax and IO exceptions and writes their
+        // 	    catches RESyntax and IO exceptions and writes their
 	//	    messages stderr 
 	//	    e.g. RESyntaxException indicates a syntax 
 	//		   error in a regular expression. This would be unusual
 	//		   and should only occur during development.
-	//		 EOFException, in this method, indicates that 'seqRec'
-	// 		   found end of file (null) and it did not coincide
-	//		   with an end of record symbol. Please note that  
-	//		   normal EOF does not raise an exception, but
-	//		   returns null
 	//		 IOException indicates failed or interrupted I/O 
 	//		   operations e.g. the path/file does not exist  
 	//		 InterruptedException indicates another thread has 
@@ -362,14 +357,6 @@ public class SeqRecordFilter
                 }
 
 	    }
-	    catch(EOFException e3)
-	    // thrown by seqRec if find EOF and last line read was not end of
-	    // record
-            {
-                    System.err.println("EOFException in SeqRecordFilter.go(): " 
-		 	+ e3.getMessage());
-		    System.exit(1);
-            }
             catch(IOException e1)
             {
                     System.err.println("IOException in SeqRecordFilter.go(): " +
