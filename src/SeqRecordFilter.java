@@ -109,7 +109,7 @@ public class SeqRecordFilter
 	//	The args array consists of triples of information
 	//	1) an decider name indicating which Decider in 'sd' to map
 	//         the output file in 3)
-	//		e.g. --mouse or  --rat
+	//		e.g. --mousedna or  --ratrna
 	//	2) option indicating output location is a file and to open that
 	//	    file in append or overwrite mode i.e. -o | -a 
 	//	    OR
@@ -118,7 +118,7 @@ public class SeqRecordFilter
 	//         the Decider in 1)
 	//	
 	//	e.g.
-	//	--mouse -o absOutputFileName
+	//	--mousedna -o absOutputFileName
 	//	--mouseBAC -d absOutputDir
 	//	
 	//	//
@@ -154,15 +154,21 @@ public class SeqRecordFilter
 		      we assign the int 2 to each LongOpt.
 		*/
 		LongOpt[] longopts = {
-    		    new LongOpt("mouse", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("mouse", LongOpt.NO_ARGUMENT, null, 2),
+    		    new LongOpt("mousedna", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("mousemrna", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("rat", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("ratdna", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("ratmrna", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("rodent", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("human", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("humandna", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("humanmrna", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("genbank", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("sprot", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("htg", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("stsmouse", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("mouseBAC", LongOpt.NO_ARGUMENT, null, 2)};
+		    new LongOpt("mouseBAC", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("nonhumanmouserat", LongOpt.NO_ARGUMENT, null, 2)};
 
 		/* create a Getopt object passing it:
 		   1) The name to display as the program name when logging
