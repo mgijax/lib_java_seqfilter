@@ -5,10 +5,12 @@ import org.jax.mgi.bio.seqrecord.*;
 public abstract class  SPSeqDecider extends SeqDecider
 {
 	//Concept:
-        //        IS: Concrete subclasses of this class must
+        //        IS: A seqDecider for deciding predeictes for SwissProt
+	//	      seqRecords
+	//	      Concrete subclasses of this class must
         //            define an isA method - see superclass
-        //       HAS: a SwissProt interrogator object to determine if a 
-	//	       predicate is true
+        //       HAS: a SwissProt interrogator object that can be used by the 
+	//	      isA methoud to determine if a predicate is true
         //      DOES: see superclass
         // Implementation:
 	

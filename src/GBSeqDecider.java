@@ -5,10 +5,12 @@ import org.jax.mgi.bio.seqrecord.*;
 public abstract class  GBSeqDecider extends SeqDecider
 {
 	//Concept:
-        //        IS: Concrete subclasses of this class must
+        //        IS: A SeqDecider for deciding predicates for GenBank
+	//	      seqRecords
+	//	      Concrete subclasses of this class must
 	//	      define an isA method - see superclass 
-        //       HAS: a Genbank interrogator object to determine if a 
-	//	       predicate is true  
+        //       HAS: a Genbank interrogator object that can be used by the isA
+	//	      method to determine if a predicate is true
         //      DOES: see superclass
         // Implementation:
 

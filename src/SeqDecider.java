@@ -21,7 +21,8 @@ public abstract class SeqDecider
 	//
 
 	public SeqDecider(String s)
-		// Purpose: initialize "name" 
+		// Purpose: Construct a SeqDecider object initializing 
+		// name  to 's'
 	{
 		this.name = s;
 	}
@@ -34,7 +35,7 @@ public abstract class SeqDecider
 		// Purpose: Decides if a predicate is true for 's'. Increments
 		//	      counters  
 		// Returns: boolean true or false
-		// Assumes: it will be implemented in all concrete subclasses
+		// Assumes: nothing
 		// Effects: nothing
 		// Throws: nothing
 		// Notes:
