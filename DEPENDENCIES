@@ -5,12 +5,11 @@
 #  Product      Tag                     Comments
 #---------------------------------------------------------------------------
 lib_java_seqrecord
-lib_java_shrdbutils
-lib_java_shrunix	// for RunCommand and BufferedLargeFileWriter 
+lib_java_core
 
 #! External Products
 #  Product      Tag                     Comments
 #---------------------------------------------------------------------------
-java-getopt-1.0.8
+java-getopt-1.0.10
 jConnect-5_2
 jndi1_2_1
