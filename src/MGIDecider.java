@@ -11,9 +11,9 @@ public class MGIDecider extends SeqDecider
         //        IS: an object that applies this predicate to a sequence record	//	      'does a seqId of this sequence record hava a MGI ID in
 	//		the MGI database? '
         //       HAS: SQL query strings to query MGI and a hashmap of 
-	// 	      accId/mgiId pairs 
-        //      DOES: Queries MGI with appropriate query determined by 's'
-	//    	       storing the results in key = seqId value = MGI ID pairs
+	// 	      accId/mgiId pairs - also see superclass
+        //      DOES: Queries MGI with appropriate query determined by 's',
+	//    	       storing the results in key = seqId, value = MGI ID pairs
 	//	       for easy access 
 	//	      Decides if a sequence record seqId has an MGI ID 
 	//		
@@ -23,13 +23,14 @@ public class MGIDecider extends SeqDecider
 	//constructors 
 	//
 
-	public MGIDecider(String s) throws SQLException
+	public MGIDecider(String s) 	// name of this decider
+		throws SQLException
 	{
-	 // Purpose: Initialize "name" in superclass to 's'
+	 // Purpose: Initialize "name" to 's'
 	 //           The type of query is determined by 's'
 	 //	     Get the database server, database, database user, and 
 	 // 	      database password from Java System Properties.
-	 //	     Queries an MGI database for MGI ID / seqId pairs with 
+	 //	     Query an MGI database for MGI ID / seqId pairs with 
 	 //		different criteria depending on 's'
 	 // Throws: An SQL exception if queryMGI fails  
 
@@ -47,37 +48,32 @@ public class MGIDecider extends SeqDecider
 	//methods
 	//
 
-	public boolean isA(SeqRecord sr)
+	public boolean isA(SeqRecord sr)	// A sequence record
 	{
-	// Purpose: Decides if one of a sequence record's seqId's has an 
-	//	      MGI ID
+	// Purpose: Decides if a sequence record's primary id has an MGI ID, if
+	//          not checks any secondary seqId's
 	//          Increments counters 
-        // Returns: boolean true of false
+        // Returns: true if MGI ID found
         // Assumes: nothing
         // Effects: nothing
         // Throws: nothing
         // Notes:
 		
-		// initialize answer to the predicate to false
+		// initialize answer to the predicate
 		boolean answer = false;
 
 		// get the seqId's of the sequence record object 'sr' 
 		Vector seqIds = sr.getSeqIds();
 
-		// iterate through 'sr' s seqIds
+		// iterate through the seqIds
 		for(int i =  0; i < seqIds.size(); i++)
 		{
-			//if this record has a primary or secondary seqId that
-			//is stored in the MGI database return true 
+			// If this seqId has an MGI ID, we're done. Increment
+			// the 'true' counter and set answer to true 
 			if (MGIMap.get(seqIds.elementAt(i)) != null)  
 			{
-				// if true increment counter for true predicates
-                        	// and set answer to true.
 				this.incrementTrueCtr();
 				answer = true;
-				
-				// we have found an MGI id so quit loop
-				// if we don't the counter will be incorrect
 				break;
 			}
 		}
@@ -94,7 +90,7 @@ public class MGIDecider extends SeqDecider
 	// 		ACC_ActualDB.name and ACC_MGIType.name = "marker" and 
 	//		MRK_Types.name = "gene"
 	//	    Places the query results in a HashMap for easy lookup
-        // Returns: boolean true of false
+        // Returns: nothing
         // Assumes: nothing 
         // Effects: nothing
         // Throws: SQL exception if database connection or SQL fails

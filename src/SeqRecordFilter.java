@@ -8,55 +8,55 @@ import BufferedLargeFileWriter;
 
 public class SeqRecordFilter
 {
-	//Concept:
+	// Concept:
         //        IS: an object that reads sequence records, filters them
 	// 		by using predicates, writes them to the 
 	//		appropriate files when a predicate returns true,
 	//		and handles logging of statistics and exceptions
         //       HAS: decider objects that encapsulate predicates and  
-	//		corresponding output stream objects 
+	//		corresponding file writer objects 
 	//	      a sequence record object 
-	//	      an input stream object	
-	//	      a count of the number of predicates
-        //      DOES: parses arguments; reads sequence records; determines 
-	//	      output stream if a predicate returns true, and writes  
-	//            the sequence record to that output stream, it
-	//	      also handles logging of statistics and exceptions
+	//	      a file reader object	
+        //      DOES: parses arguments; reads sequence records;  
+	//	      writes sequence records to files corresponding to 
+	//		predicates
+	//	      handles logging of statistics and exceptions
         // Implementation:
 
-	//constructors
+	// constructors
 	
 	public SeqRecordFilter(
-		SeqDecider[] deciders, // Array of objects that determine
-			    	       // specific predicates of a sequence
-				       // record to use for 
+		SeqDecider[] deciders, // All possible predicates for this filt-
+				       // er to determine the organism type of 
+				       // a sequence record.
 	        String[] args,	       // command line arguments	 
+		String logName,	       // abs log name 
 		SeqRecord sr)	       // sequence record object
 	{
-	// Effects: creates input and output stream objects 
-	// 	    creates default log file
+	    // Purpose: creates an file reader object 
+	    //	    creates file writer objects for each predicate 
+	    //	    creates a file writer object for 'logName'
 	    try
 	    {	
-		//create an array for the predicates
+		// create an array for the predicates
 		this.seqDeciders = new SeqDecider[deciders.length];
 		
-		//create an array for writers which correspond to predicates
-		//this.seqWriters = new BufferedWriter[deciders.length];
+		// create an array for writers which correspond (by index) 
+		// to predicates in the seqDeciders array by index
 		this.seqWriters = new BufferedLargeFileWriter[deciders.length];
 
-		//capture the log path/file from Java system properties
-		String logPath = System.getProperty("LOG");		
-
-		//create a log writer, open in append mode
+		// create a log writer, open in append mode
 		this.log = new PrintWriter(new FileWriter(
-			logPath, true));
+			logName, true));
 
-		//create a reader for stdin
+		// create a reader for stdin
 		this.in = new BufferedReader(new InputStreamReader(System.in));
-		//process command line args
+	
+		// the sequence record object
+                this.seqRec = sr;
+	
+		// process command line args
 		this.getArgs(deciders, args);
-		//the sequence record object
-		this.seqRec = sr;
 	    }
 	    catch(IOException e1)
             {
@@ -67,49 +67,30 @@ public class SeqRecordFilter
 	}
 		
 	public SeqRecordFilter(
-		SeqDecider[] deciders, // Array of objects that determine the
-				       // organism type of a record
+		SeqDecider[] deciders, // All possible predicates for this filt-
+				       // er to determine the organism type of
+				       // a sequence record
 		String[] args, 	       // command line arguments	
-		String name,           // explicit log path/name 	
 		SeqRecord sr)	       // sequence record object
 	{
-	// Effects: creates input and output stream objects
-	//	    creates log file using "name"
-
-	    try
-	    {
-		//see first constructor for description
-		this.seqDeciders = new SeqDecider[deciders.length];
-                //this.seqWriters = new BufferedWriter[deciders.length];
-		this.seqWriters = new BufferedLargeFileWriter[deciders.length];
-		this.log = new PrintWriter( new FileWriter(
-			name, true)); 
-
-		this.in = new BufferedReader(new InputStreamReader(System.in));
-		this.getArgs(deciders, args);
-		this.seqRec = sr;
-	    }
-	    catch(IOException e1)
-            {
-                System.err.println("IOException in SeqRecordFilter.construct: "
-                    + e1.getMessage());
-            }
-	    	
-
+		// Purpose: creates an file reader object
+		//          creates file writer objects for each predicate 
+		//          creates a default log file writer object 
+		
+		// call first constructor with Configurable abs log name
+		this(deciders, args, System.getProperty("LOG"), sr);
 	}
 	
 	//
-	//methods
+	// methods
 	//
 
 	public void getArgs(
 		SeqDecider[] sd, // All possible predicates for this filter
 		String[] args)   // command line arguments, see usage in Notes:
 	{
-	// Purpose: Maps predicates from "sd" to output file names in args
-	//	     all predicate options in args must be contained in sd 
-        //           e.g. If a mouse predicate returns true,
-	//           then the record is written to the mouse file. 
+	// Purpose: Maps predicates from "sd" to output file names in "args"
+	//	    See Notes below
         // Returns: nothing 
         // Assumes: nothing
         // Effects: nothing
@@ -119,23 +100,23 @@ public class SeqRecordFilter
 	//	     I/O exceptions
         // Notes:
 	//	//
-	//	//command line usage
+	//	// command line usage
 	//	//
 	//
-	//	The args array will consist of triples of information
-	//	1) long option organismName indicates which predicate in sd
-	//		e.g. --mouse | --rat
-	//	2) short option indicating whether to open the output
+	//	The args array consists of triples of information
+	//	1) an organism name indicating which predicate in 'sd' to map
+	//         the output file in 3)
+	//		e.g. --mouse or  --rat
+	//	2) option indicating whether to open the output
 	//	    file in append or overwrite mode e.g. -o | -a
-	//	3) output file path and name to be mapped to the predicate
+	//	3) abs output file to be mapped to the predicate
 	//	   in 1)
-	//
-	//	{--organismName, -o | -a, outputPath/Filename, ... , 
-	//		--organismName, -o | -a, outputPath/Filename}
-	//	note: java args do not contain the application name
+	//	
+	//	e.g.
+	//	--mouse -o absOutputFileName
 	//	
 	//	//
-	//	//optstring syntax:
+	//	// optstring syntax:
 	//	//
 	//
 	//	- = return args in order regardless of if opt longOpt or arg
@@ -150,8 +131,7 @@ public class SeqRecordFilter
 
 	    try
 	    {
-		// a String containing a description of the valid args for this
-		// program
+		// a String containing a description of the valid (short) optns 
 		String optstring = "-:a:o:";
 		
 		// long options are defined by an array of "LongOpt" objects. 
@@ -159,7 +139,7 @@ public class SeqRecordFilter
 
 		// the LongOpt constructor takes four params
 		// 1) a String representing the option name
-		// 2) a integer specifying what ars theoption takes (no arg-
+		// 2) a integer specifying what args the option takes (no arg-
 		//	ument in this case)
 		// 3) a StringBuffer flag object (null in this case)
 		// 4) an integer whose value is returned when getOpt() is called
@@ -191,18 +171,20 @@ public class SeqRecordFilter
 		Getopt g = new Getopt("who knows", args, optstring, longopts);
 		
 		// all longopts (which represent predicates) have corresponding 
-		// (short) opts (which represent output files). This flag is
-		// used to to detect errors in pairing predicates to outfiles 
+		// (short) opts (which represent output files). 
+		// true = have a predicate  object and need to get its 
+		// corresponding output file
 		boolean haveDecider = false;
 
 		int c;		// the option returned from g.getopt()
 		String arg;	// the arg returned from g.getOptarg()
+
 		//get command line options in order, run them through the switch
 		while((c = g.getopt()) != -1)
 		{
 		    switch(c)	 
 		    {
-			//cases for all the longopts which represent predicates
+			// cases for all the longopts which represent predicates
 			case 2:
 			case 3:
 			case 4:
@@ -218,14 +200,13 @@ public class SeqRecordFilter
 			    }
 			    else
 			    {
-			    	//loop through the predicates
+			    	// loop through all the possible predicates
 				for(int i = 0; i < sd.length; i++)
 			    	{
-		 			//if the predicate's name == the text 
-					//name for the integer value of this
-		    			//longOpt on the command line, then 
-					//place that predicate in the decider
-		    			//array.
+		 			// if the 'sd's  name == the 
+					// command line long option, place
+					// that predicate in the decider
+		    			// array.
 				    if(sd[i].getName().equals(
 					longopts[g.getLongind()].getName() ))
 			       	    {
@@ -233,7 +214,7 @@ public class SeqRecordFilter
 						sd[i];
 				    }
 			        }
-			        //we have a predicate
+			        // we have a predicate
 				haveDecider = true;
 			        break;
 			    } 
@@ -246,21 +227,19 @@ public class SeqRecordFilter
 			    }  
 			    else
 			    {
-				//get arg (an output filename) for this option
+				// get arg (an output filename) for this option
 				arg = g.getOptarg();	
 				
-				//open the file in append mode and place it in
-				//the writer array at parallel position 
-				//to the predicate array
-				//this.seqWriters[this.predicateCtr] = new 
-				//	BufferedWriter(
-				//		new FileWriter(arg, true), 5000);
+				// open the file in append mode and place it in
+				// the seqWriters array parallel to the predic-
+				// array
 				this.seqWriters[this.predicateCtr] = new
                                 	BufferedLargeFileWriter(arg, true);
-				//we are now expecting a predicate
+
+				// we are now expecting a predicate
 				haveDecider = false; 	
 				
-				//increment the predicate/outfile count
+				// increment the predicate object count
 				this.predicateCtr++;
 			    }
 			    break;
@@ -273,22 +252,18 @@ public class SeqRecordFilter
                             }
                             else
                             {
-                                //get arg (an output filename) for this option
+                                // get arg (an output filename) for this option
 				arg = g.getOptarg();
 
-				//open the file in append mode and place it in
-                                //the predicate array at parallel position 
-                                //to the predicate array
-				//this.seqWriters[this.predicateCtr] = new
-				//	BufferedWriter(new FileWriter(
-				//		arg, false));
+				// open the file in overwrite mode and place it 
+                                // in the seqWriters array  
                                 this.seqWriters[this.predicateCtr] = new 
 					BufferedLargeFileWriter(arg, false);
                                 
-				//we are now expecting a predicate
+				// we are now expecting a predicate
 				haveDecider = false;    
 			
-				//increment the predicate/outfile count
+				// increment the predicate object count
                                 this.predicateCtr++;           
                             }
                             break;
@@ -313,19 +288,16 @@ public class SeqRecordFilter
 		System.err.println("InterruptedException in SeqRecordFilter.go(): "
                     + e2.getMessage());	
 	    }
-	    
-		
-
 	}
 	
 	public void go() 
 	{
 	// Purpose: Reads sequence records
 	//	    For each record read: 
-	//	      if a predicate is true write the record to the predicate's
-	//	      corresponding output file, 
-	//	    Logging total number of records processed and number of
-	//	      records processed for each output file
+	//	      if a predicate is true write the record using the pred-
+	//	      icates corresponding writer, 
+	//	    Logs total number of records processed and number of
+	//	      records written by each writer
         // Returns: nothing
         // Assumes: the constructors have initialized all readers and writers,
 	//	    a sequence record object, and created predicate and
@@ -337,63 +309,56 @@ public class SeqRecordFilter
 	//		   error in a regular expression. This would be unusual
 	//		   because all RE syntax is hardcoded in the class 
 	//		   source of the objects used by this method. 
-	//		 EOFException, in this method, indicates EOF found
-	//		   after an non-end of record symbol in a file. Please
-	//		   note that normal EOF does not raise an exception, but
+	//		 EOFException, in this method, indicates that 'seqRec'
+	// 		   found end of file (null) and it did not coincide
+	//		   with an end of record symbol. Please note that  
+	//		   normal EOF does not raise an exception, but
 	//		   returns null
 	//		 IOException indicates failed or interrupted I/O 
 	//		   operations e.g. the path/file does not exist  
-	    
 	    try
 	    { 
-		//debug: the record number in the file
-		int testCtr = 0;
-	
-		//tracking of system time for this filter run
-		long totalRunTimeMinutes = -1;	
-		long stopTime = -1;
+		// tracking time elapsed for this filter run
+		long totalRunTimeMinutes = 0;	
+		long stopTime = 0;
 		long startTime = System.currentTimeMillis();
 		
-		//priming read
+		// priming read of a sequence record
 		this.seqRec.readText(this.in);
 		
-		//DEBUG
-		System.err.println("We are in SeqRecordFilter.go()");
-		//Filter sequence records until end of file
+		// seqRec.getLine() returns the last line that it read when
+		// reading itself. If it returns null the last line of the last
+		// sequence record has been read. 
 		while(this.seqRec.getLine() != null)
 		{
-			// loop through the predicates	
+			// loop through the predicates for this filter run 	
 			for(int i = 0; i < this.predicateCtr; i++)
 			{
 				//if this predicate returns true for this seqRec
-				//write it to this predicate's corresponding 
-				//output file
+				// write it with this predicate's corresponding 
+				// writer
 				if(this.seqDeciders[i].isA(this.seqRec) ==true)
 				{
 					this.seqWriters[i].write(
 						this.seqRec.getText());
 				}
 			}
-			//debug: increment record number and print it to screen
-			//testCtr ++;
-			//System.out.println(testCtr);
-			//System.out.println(seqRec.lineCount);
-			//read the next record
+			// read the next record
 			this.seqRec.readText(this.in);
 		}
 
-		//Capture the stop time of this filter
+		// Capture the stop time of this filter
 		stopTime = System.currentTimeMillis();
 	
-		//Figure the run time of this filter and log it
+		// Figure the run time of this filter and log it
                 totalRunTimeMinutes = ((stopTime - startTime) / 1000);
                 log("Total runtime in seconds = ");
                 log(new Long(totalRunTimeMinutes).toString());
 		
-		//log statistics from this filter run (see the method for info)
+		// log statistics from this filter run (see the method for info)
 		logStats();
 
-		//close all input and output streams
+		// close all readers and writers
                 this.in.close();
                 this.log.close();
                 
@@ -429,10 +394,10 @@ public class SeqRecordFilter
 	private void logStats()
 	{
 	//
-	//Purpose: Logs total number of records processed and number of records
+	// Purpose: Logs total number of records processed and number of records
 	//         processed for each output file
 
-		//loop through the predicates
+		// loop through the predicates
 		for (int i = 0; i < this.predicateCtr; i++)
 		{
 			this.log.println("Count statistics for " + 
@@ -448,47 +413,34 @@ public class SeqRecordFilter
 	private void log(String s)
 	{
 	//	
-	//Purpose: Writes 's' to the log 
+	// Purpose: Writes 's' to the log 
 	//
 		this.log.println(s);
 	}
 
-	// 6-4-01 Decided to send all log/errLog stuff to stdout/stderr to be
-	// captured into one big file
-		
-	//private void logErr(String s)
-	//{
 	//
-	//Purpose: Writes 's' to the log and error log
-	//
-	//	this.errLog.println(s);
-	//	this.log.println(s);
-	//}
-	
-	
-	//
-	//instance variables
+	// instance variables
 	//
 
-	//the sequence record object that will read and parse all 
-	//the records in the input stream
+	// the sequence record object that will read and parse *all* 
+	// the records in the input stream
 	private SeqRecord seqRec;
 
-	//the number of predicates for this filter e.g.
-	//the number of organisms we are filtering for
+	// the number of predicates for this filter e.g.
+	// the number of organisms we are filtering for
 	private int predicateCtr = 0;		 
 					
-	//general logging includes statistics, exceptions, etc
+	// log writer object 
 	private PrintWriter log;
 	
-	//the file input stream reader
+	// the input file reader object
 	private BufferedReader in; 
 
-	//the predicates for this filter 
+	// predicate objects for organisms requested on the command line  
+	// which correspond, by index, to 'this.seqWriters'
 	private SeqDecider[] seqDeciders;
 
-	//the file output stream writers, one for each predicate 
-	//private BufferedWriter[] seqWriters;
+	// file writers which correspond, by index, to 'this.seqDeciders' 
 	private BufferedLargeFileWriter[] seqWriters;
 
 
