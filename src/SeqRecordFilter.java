@@ -223,7 +223,6 @@ public class SeqRecordFilter
 				// array
 				this.seqWriters[this.deciderCtr] = new
                                 	BufferedLargeFileWriter(arg, true);
-
 				// we are now expecting a Decider
 				haveDecider = false; 	
 				
