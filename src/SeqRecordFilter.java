@@ -4,6 +4,7 @@ import java.io.*;
 import org.apache.regexp.*;
 import gnu.getopt.*;
 import org.jax.mgi.bio.seqrecord.*;	
+import BufferedLargeFileWriter;
 
 public class SeqRecordFilter
 {
@@ -40,8 +41,9 @@ public class SeqRecordFilter
 		this.seqDeciders = new SeqDecider[deciders.length];
 		
 		//create an array for writers which correspond to predicates
-		this.seqWriters = new BufferedWriter[deciders.length];
-		
+		//this.seqWriters = new BufferedWriter[deciders.length];
+		this.seqWriters = new BufferedLargeFileWriter[deciders.length];
+
 		//capture the log path/file from Java system properties
 		String logPath = System.getProperty("LOG");		
 
@@ -51,10 +53,8 @@ public class SeqRecordFilter
 
 		//create a reader for stdin
 		this.in = new BufferedReader(new InputStreamReader(System.in));
-		
 		//process command line args
 		this.getArgs(deciders, args);
-	
 		//the sequence record object
 		this.seqRec = sr;
 	    }
@@ -80,7 +80,8 @@ public class SeqRecordFilter
 	    {
 		//see first constructor for description
 		this.seqDeciders = new SeqDecider[deciders.length];
-                this.seqWriters = new BufferedWriter[deciders.length];
+                //this.seqWriters = new BufferedWriter[deciders.length];
+		this.seqWriters = new BufferedLargeFileWriter[deciders.length];
 		this.log = new PrintWriter( new FileWriter(
 			name, true)); 
 
@@ -154,7 +155,7 @@ public class SeqRecordFilter
 		String optstring = "-:a:o:";
 		
 		// long options are defined by an array of "LongOpt" objects. 
-		LongOpt[] longopts = new LongOpt[6];
+		LongOpt[] longopts = new LongOpt[8];
 
 		// the LongOpt constructor takes four params
 		// 1) a String representing the option name
@@ -176,6 +177,10 @@ public class SeqRecordFilter
 			"genbank", LongOpt.NO_ARGUMENT, null, 6);
 		longopts[5] = new LongOpt (
 			"sprot", LongOpt.NO_ARGUMENT, null, 7);
+		longopts[6] = new LongOpt (
+                	"gbhtg", LongOpt.NO_ARGUMENT, null, 8);
+		longopts[7] = new LongOpt (
+                        "gbstsmouse", LongOpt.NO_ARGUMENT, null, 9);
 		
 		// create a Getopt object passing it:
 		// 1) The name to display as the program name when logging
@@ -192,7 +197,6 @@ public class SeqRecordFilter
 
 		int c;		// the option returned from g.getopt()
 		String arg;	// the arg returned from g.getOptarg()
-		
 		//get command line options in order, run them through the switch
 		while((c = g.getopt()) != -1)
 		{
@@ -205,6 +209,8 @@ public class SeqRecordFilter
 			case 5:
 			case 6:
 			case 7:
+			case 8:
+			case 9:
 			    if(haveDecider == true)
 			    {
 				System.err.println("ERROR:Don't have a writer " 
@@ -244,12 +250,13 @@ public class SeqRecordFilter
 				arg = g.getOptarg();	
 				
 				//open the file in append mode and place it in
-				//the predicate array at parallel position 
+				//the writer array at parallel position 
 				//to the predicate array
-				this.seqWriters[this.predicateCtr] = new 
-					BufferedWriter(
-						new FileWriter(arg, true), 5000);
-				
+				//this.seqWriters[this.predicateCtr] = new 
+				//	BufferedWriter(
+				//		new FileWriter(arg, true), 5000);
+				this.seqWriters[this.predicateCtr] = new
+                                	BufferedLargeFileWriter(arg, true);
 				//we are now expecting a predicate
 				haveDecider = false; 	
 				
@@ -272,9 +279,11 @@ public class SeqRecordFilter
 				//open the file in append mode and place it in
                                 //the predicate array at parallel position 
                                 //to the predicate array
+				//this.seqWriters[this.predicateCtr] = new
+				//	BufferedWriter(new FileWriter(
+				//		arg, false));
                                 this.seqWriters[this.predicateCtr] = new 
-					BufferedWriter(
-						new FileWriter(arg, false));
+					BufferedLargeFileWriter(arg, false);
                                 
 				//we are now expecting a predicate
 				haveDecider = false;    
@@ -299,6 +308,11 @@ public class SeqRecordFilter
                 System.err.println("IOException in SeqRecordFilter.go(): " 
                     + e1.getMessage());
             }
+	    catch(InterruptedException e2)
+	    {
+		System.err.println("InterruptedException in SeqRecordFilter.go(): "
+                    + e2.getMessage());	
+	    }
 	    
 		
 
@@ -358,8 +372,6 @@ public class SeqRecordFilter
 				{
 					this.seqWriters[i].write(
 						this.seqRec.getText());
-					//the following didn't help
-					//this.seqWriters[i].flush();
 				}
 			}
 			//debug: increment record number and print it to screen
@@ -406,6 +418,11 @@ public class SeqRecordFilter
                     System.err.println("RESyntaxException SeqRecordFilter.go():"
 			 + e2.getMessage());
             }
+	    catch(InterruptedException e4)
+	    { 
+		  System.err.println("InterruptedException SeqRecordFilter.go():"
+                         + e4.getMessage());
+	    }
  	
 	}
 
@@ -471,7 +488,8 @@ public class SeqRecordFilter
 	private SeqDecider[] seqDeciders;
 
 	//the file output stream writers, one for each predicate 
-	private BufferedWriter[] seqWriters;
+	//private BufferedWriter[] seqWriters;
+	private BufferedLargeFileWriter[] seqWriters;
 
 
 }
