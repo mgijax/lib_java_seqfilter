@@ -12,6 +12,5 @@ lib_java_shrunix	// for RunCommand and BufferedLargeFileWriter
 #  Product      Tag                     Comments
 #---------------------------------------------------------------------------
 java-getopt-1.0.8
-jakarta-regexp-1.2
 jConnect-5_2
 jndi1_2_1
