@@ -30,7 +30,10 @@ public class SeqRecordFilter
 	        String[] args,	       // command line arguments (see getArgs()
 				       // method header) 
 		String logName,	       // full path name of this filter's log
-		SeqRecord sr)	       // sequence record object
+		SeqRecord sr,	       // sequence record object
+		boolean outputByRecord)	// true if one output file per record
+				        // false if all records per decider are
+					// output to one file
 	{
 	    // Purpose: creates a file reader object 
 	    //	    creates file writer objects for each Decider in 'args'
@@ -39,26 +42,34 @@ public class SeqRecordFilter
 	    // 		writes exception msg to stderr then exits	
 	    try
 	    {	
+		this.outputByRecord = outputByRecord;
+
 		// create an array to hold subset of 'deciders' based on 
 		// 'args'; create same size as 'deciders' 
 		this.decidersForThisFilterRun = new SeqDecider[deciders.length];
-		
-		// create an array for writers which correspond (by index) 
-		// to Deciders in the decidersForThisFilterRun array
-		this.seqWriters = new BufferedLargeFileWriter[deciders.length];
-
 		// create a log writer, open in append mode
 		this.log = new BufferedWriter(new FileWriter(
 			logName, true));
 
 		// create a reader for stdin
 		this.in = new BufferedReader(new InputStreamReader(System.in));
-	
+		//this.in = new BufferedReader(new FileReader("/home/sc/work/seqdb_engineDev/data/downloads/ftp.ncbi.nlm.nih.gov/genbank/gbhtg1.seq"));
 		// the sequence record object
                 this.seqRec = sr;
-	
-		// process command line args
-		this.getArgs(deciders, args);
+		
+		// grab deciders/output directory doubles from args
+		if(this.outputByRecord == true)
+		{
+			this.getArgs(deciders, args, outputByRecord);
+		}
+		
+		// Grab decider/outputFileMode/output file triples from args
+                // create a writer for each output file
+		else
+		{
+			
+			this.getArgs(deciders, args);
+		}
 	    }
 	    catch(IOException e1)
             {
@@ -74,19 +85,118 @@ public class SeqRecordFilter
 				       // filter 
 		String[] args, 	       // command line arguments (see getArgs()
 				       // method header)	
-		SeqRecord sr)	       // sequence record object
+		SeqRecord sr,	       // sequence record object
+		boolean outputByRecord) // true if one output file per record
+                                        // false if all records per decider are
+                                        // output to one file
 	{
 	// Purpose: creates a file reader object
 	//          creates file writer objects for each Decider in 'args'
 	//          creates a default log file writer object 
 
 		// call first constructor with Configurable abs log name
-		this(deciders, args, System.getProperty("LOG"), sr);
+		this(deciders, args, System.getProperty("LOG"), sr, 
+			outputByRecord);
 	}
 	
 	//
 	// methods
 	//
+
+	public void getArgs(
+		SeqDecider[] sd,        // All possible Deciders for this filter
+		String[] args,          // command line arguments, see usage in Notes:
+		boolean outputByRecord) // assumed to be true
+	{
+	// Purpose: Creates a writer for sd
+        //          See Notes below
+        // Returns: nothing
+        // Assumes: nothing
+        // Effects: catches IOException, InterruptedException
+        //          write exception message to stderr
+        //          and exits. See the go() method for description of Exceptions
+        // Throws:  nothing
+        // Notes:
+        //      //
+        //      // command line usage
+	//	//	
+	//
+	//      The args array consists of doubles of information
+        //      1) a decider name indicating which Decider in 'sd' will be used
+	//         in this filter
+        //              e.g. --mouseBAC 
+        //      2) full path to output file directory for decider in 1)
+        //
+
+		// create an array of length 1 to hold the single writer which
+		// will be recycled to write to every output file
+		this.seqWriters = new BufferedLargeFileWriter[1];
+		
+		// create an array for output directories which correspond (by
+                // index) to Deciders in this.decidersForThisFilterRun array 
+		this.outputDirectories = new String[sd.length];
+
+		String optstring = "-"; //process args in order
+		LongOpt[] longopts = {
+                    new LongOpt("mouse", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("rat", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("rodent", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("human", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("genbank", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("sprot", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("htg", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("stsmouse", LongOpt.REQUIRED_ARGUMENT, null, 2),
+                    new LongOpt("mouseBAC", LongOpt.REQUIRED_ARGUMENT, null, 2)};
+		
+		/* create a Getopt object passing it:
+                   1) The name to display as the program name when logging
+                   2) The args
+                   3) description of valid options
+                   4) description of valid long options
+                */
+		Getopt g = new Getopt("Usage Error", args, optstring, longopts);
+
+		int c;          // the option returned from g.getopt()
+		String arg;     // the arg returned from g.getOptarg()
+
+		//get command line options in order, run them through the switch
+                while((c = g.getopt()) != -1)
+                {
+                    switch(c)
+                    {
+                        // case for all the longopts
+                        case 2:
+			    // get arg (an output directory) for this option
+                            arg = g.getOptarg();
+
+			    for(int i = 0; i < sd.length; i++)
+                            {
+                            	// if the 'sd's  name == the
+                                // command line long option, place
+                                // that Decider object in 'deciders
+                                // ForThisFilterRun' array
+                                if(sd[i].getName().equals(
+                               	    longopts[g.getLongind()].getName() ))
+                                {
+                                    this.decidersForThisFilterRun[
+                                        this.deciderCtr] = sd[i];
+
+				    // get the output directory for the decider
+				    this.outputDirectories[this.deciderCtr] =
+				        arg + File.separator;
+					//System.getProperty("file.separator");
+
+				    // increment the Decider object count
+                                    this.deciderCtr++;
+                                }
+                            }
+			    break;
+	    	
+		    	default:
+                       	    System.err.println("Error getopt() returned: " + c);
+		    }
+		}   
+	}
 
 	public void getArgs(
 		SeqDecider[] sd, // All possible Deciders for this filter
@@ -106,7 +216,7 @@ public class SeqRecordFilter
 	//	//
 	//
 	//	The args array consists of triples of information
-	//	1) an organism name indicating which Decider in 'sd' to map
+	//	1) an decider name indicating which Decider in 'sd' to map
 	//         the output file in 3)
 	//		e.g. --mouse or  --rat
 	//	2) option indicating whether to open the output
@@ -133,6 +243,10 @@ public class SeqRecordFilter
 
 	    try
 	    {
+		// create an array for writers which correspond (by
+                // index) to Deciders in this.decidersForThisFilterRun array
+                this.seqWriters = new BufferedLargeFileWriter[sd.length];
+
 		// a String containing a description of the valid (short) optns 
 		String optstring = "-:a:o:";
 		
@@ -149,14 +263,15 @@ public class SeqRecordFilter
 		      we assign the int 2 to each LongOpt.
 		*/
 		LongOpt[] longopts = {
-			new LongOpt("mouse", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("rat", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("rodent", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("human", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("genbank", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("sprot", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("htg", LongOpt.NO_ARGUMENT, null, 2),
-			new LongOpt("stsmouse", LongOpt.NO_ARGUMENT, null, 2)};
+    		    new LongOpt("mouse", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("rat", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("rodent", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("human", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("genbank", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("sprot", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("htg", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("stsmouse", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("mouseBAC", LongOpt.NO_ARGUMENT, null, 2)};
 
 		/* create a Getopt object passing it:
 		   1) The name to display as the program name when logging
@@ -327,13 +442,12 @@ public class SeqRecordFilter
 		while(this.seqRec.getLine() != null)
 		{
 			processRecord();
-
 			// read the next record
 			this.seqRec.readText(this.in);
 		}
 		
 		// process the last record
-		processRecord();
+		//processRecord();
 		
 		// Capture the stop time of this filter
 		stopTime = System.currentTimeMillis();
@@ -350,10 +464,15 @@ public class SeqRecordFilter
                 this.in.close();
                 this.log.close();
                 
-		for(int i = 0; i < this.deciderCtr; i++)
-                {
-                        this.seqWriters[i].close();
-                }
+		// if we are writing output by decider, close the output file(s)		// note: when writing to separate records we close as soon as 
+		// we write - see processRecord method. 	
+		if(this.outputByRecord == false)
+		{ 
+			for(int i = 0; i < this.deciderCtr; i++)
+                	{
+                        	this.seqWriters[i].close();
+                	}
+		}
 
 	    }
             catch(IOException e1)
@@ -379,18 +498,46 @@ public class SeqRecordFilter
 
 	private void processRecord() throws IOException
 	{
-		// loop through the Deciders for this filter run
-                for(int i = 0; i < this.deciderCtr; i++)
-                {
-                        //if Decider returns true for seqRec
-                        // write it with the corresponding file writer
-                        if(this.decidersForThisFilterRun[i].isA(
-                                this.seqRec) == true)
-                        {
-				this.seqWriters[i].write(
-                                                this.seqRec.getText());
+	    try
+	    {		
+	        // loop through the Deciders for this filter run
+            	for(int i = 0; i < this.deciderCtr; i++)
+            	{
+                    //if Decider returns true for seqRec
+                    if(this.decidersForThisFilterRun[i].isA(
+                            this.seqRec) == true)
+                    {
+			// write it to a new file named as follows:
+			// the output directory for the decider + 
+			// the seqIdVersin for the sequence record
+			if(this.outputByRecord == true)
+			{
+			    				
+			    this.seqWriters[0] = new 
+			        BufferedLargeFileWriter(
+			   	    this.outputDirectories[i] + 
+				    this.seqRec.getVersion(), false);
+				
+			    this.seqWriters[0].write(this.seqRec.getText());	
+			    this.seqWriters[0].close();
 			}
+			// write it to the file writer corresponding
+			// to the decider
+			else
+			{
+			    this.seqWriters[i].write(
+                                this.seqRec.getText());
+			}
+		    }
 		}
+	    }
+	    catch(InterruptedException e2)
+            {
+                System.err.println(
+                    "InterruptedException in SeqRecordFilter.getArgs(): "
+                    + e2.getMessage());
+                System.exit(1);
+            }
 	}
 
 	private void logStats() throws IOException
@@ -448,7 +595,13 @@ public class SeqRecordFilter
 	private SeqDecider[] decidersForThisFilterRun;
 
 	// file writers which correspond, by index, to 
-	// 'decidersForThisFilterRun' 
+	// 'decidersForThisFilterRun' when 'this.outputByRecord' == false
 	private BufferedLargeFileWriter[] seqWriters;
 
+	// output directories which correspond, by index, to
+	// 'decidersForThisFilterRun' when 'this.outputByRecord' == true
+	private String[] outputDirectories;
+		
+	// true if one output file per record; false if one ouput file/decider
+	private boolean outputByRecord;
 }
