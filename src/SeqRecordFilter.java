@@ -10,17 +10,20 @@ import org.jax.mgi.shr.unix.*;
 public class SeqRecordFilter
 {
 	// Concept:
-        //        IS: an object that reads sequence records, filters them
-	// 		by using Decider objects, writes them to the 
+        //        IS: an object that reads sequence records from stdin, filters
+	// 		them using Decider objects, writes them to the 
 	//		appropriate files when a Decider object returns true,
 	//		and handles logging of statistics and exceptions
         //       HAS: Decider objects that encapsulate predicates  
 	//	      a FileWriter object for each Decider object
-	//	      a sequence record object 
-	//	      a FileReader object	
-        //      DOES: parses arguments; reads sequence records;  
+	//	      a sequence record object for the current sequence record
+	//             to process
+	//	      a FileReader object for reading stdin
+        //      DOES: parses arguments(see getArgs()); reads sequence records;  
 	//	      writes sequence records to files 
 	//	      handles logging of statistics and exceptions
+	//            
+	//      
         // Implementation:
 
 	// constructors
@@ -51,7 +54,7 @@ public class SeqRecordFilter
 		this.in = new BufferedReader(new InputStreamReader(System.in));
 
 		//DEBUG
-		//this.in = new BufferedReader(new FileReader(
+		//this.in = new BufferedReader(new FileReader("/data/seqdbs/blast/gb.build/gb_mouse.seq"));
 		//	"Place abs path to input file here"));
 
 		// the sequence record object
@@ -100,26 +103,36 @@ public class SeqRecordFilter
         // Effects: catches IOException, InterruptedException 
 	//	    write exception message to stderr
 	//	    and exits. See the go() method for description of Exceptions
+	//          writes error message to stderr if command line errors or 
+	//          invalid options in 'args'
         // Throws:  nothing
         // Notes:
 	//	//
-	//	// command line usage
+	//	// The command line args concept
 	//	//
 	//
-	//	The args array consists of triples of information
-	//	1) an decider name indicating which Decider in 'sd' to map
-	//         the output file in 3)
-	//		e.g. --mousedna or  --ratrna
-	//	2) option indicating output location is a file and to open that
-	//	    file in append or overwrite mode i.e. -o | -a 
-	//	    OR
-	//	   option indicating output location is a directory i.e. -d
-	//	3) full path to output file or directory to be mapped to 
-	//         the Decider in 1)
-	//	
-	//	e.g.
-	//	--mousedna -o absOutputFileName
-	//	--mouseBAC -d absOutputDir
+	//	1)'sd' contains the full set of decider object supported by 
+	//          the application using this class
+	//          using this class. 
+	//	2) 'args' is the command line args to the application using
+	//           this class. 'args' provides the mapping of deciders to
+	//           their outputLocation. outputLocation is where 
+	//           sequences passing a decider will be written. Note:
+	//           'args' may map 1 to all deciders listed in 'sd'
+	//		e.g. --deciderName <-d|-o|-a> outputLocation
+	//
+	//           where: 
+	//		-) deciderName is a decider supported by the app using
+	//                   this class 
+	//		-) -d means outputLocation is a directory 
+	//                   in this case each sequence will be written to its
+	//                   own file in the directory
+	//		-) -o means outputLocation is a file to overwrite
+	//		-) -a means outputLocationis a file to append
+	//                   in the above two cases all sequences passing the 
+	//                     decider will be written to one file
+	//		-) outputLocation is full path to output location for 
+	//                 deciderName (file or directory) 
 	//	
 	//	//
 	//	// optstring syntax:
@@ -168,7 +181,9 @@ public class SeqRecordFilter
 		    new LongOpt("sprot", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("stsmouse", LongOpt.NO_ARGUMENT, null, 2),
 		    new LongOpt("mouseBAC", LongOpt.NO_ARGUMENT, null, 2),
-		    new LongOpt("nonhumanmouserat", LongOpt.NO_ARGUMENT, null, 2)};
+		    new LongOpt("nonhumanmouserat", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("rikenSingleMarker", LongOpt.NO_ARGUMENT, null, 2),
+		    new LongOpt("gbSingleMarker", LongOpt.NO_ARGUMENT, null, 2)};
 
 		/* create a Getopt object passing it:
 		   1) The name to display as the program name when logging
@@ -362,7 +377,8 @@ public class SeqRecordFilter
 			// read the next record
 			this.seqRec.readText(this.in);
 		}
-		
+		// process last record
+		processRecord();
 		// Capture the stop time of this filter
 		stopTime = System.currentTimeMillis();
 
@@ -413,8 +429,9 @@ public class SeqRecordFilter
 
 	private void processRecord() 
 	{
-	// Purpose: 
-        // Returns: 
+	// Purpose: Apply all deciders to this.seqRec. Write sequences passing
+	//           decider(s) to the decider's outputLocation
+        // Returns: nothing
         // Assumes: the constructors have initialized all readers and writers,
 	//	    for deciders whose outputLocation is a file
         //          a sequence record object, and created Decider and
@@ -429,6 +446,7 @@ public class SeqRecordFilter
 
 	    try
 	    {		
+		//System.out.println("in processRecord");
 	        // loop through the Deciders for this filter run
             	for(int i = 0; i < this.deciderCtr; i++)
             	{
@@ -436,6 +454,7 @@ public class SeqRecordFilter
                     if(this.decidersForThisFilterRun[i].isA(
                             this.seqRec) == true)
                     {
+			//System.out.println("SeqId in ProcessRecord = " + (String)(this.seqRec.getSeqIds()).get(0));
 			// if seqOutput[i] is type File then we write 
 			// the seqRec text to its own file
 			if(this.seqOutput.get(i) instanceof File)
@@ -536,7 +555,9 @@ public class SeqRecordFilter
 	// to 'decidersForThisFilterRun' 
 	private Vector seqOutput = new Vector();
 
-	// writer for those deciders which require single record/file output
+	// used when a decider's output location is a directory. This writer
+	// is reused to write individual files for each sequence passing that
+	// decider to that directory
 	private BufferedLargeFileWriter singleSeqWriter;
 
 }
