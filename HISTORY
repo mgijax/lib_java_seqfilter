@@ -1,9 +1,19 @@
+TAG: lib_java_seqfilter-1-0-6
+DATE: 01/17/2002
+STAFF: sc
+RELEASE:
+CHANGES:
+1) removed the getargs added in tag 1-0-4. Consolidated the logic to do the
+   same thing into one getArgs by adding a -d option whose arg is an output
+   directory in which to write the individual sequence records, named by 
+   seqIdVersion
+
 TAG: lib_java_seqfilter-1-0-5
 DATE: 01/17/2002
 STAFF: sc
 RELEASE:
 CHANGES:
-1) Removed some debug code from SeaqRecordFilter
+1) Removed some debug code from SeqRecordFilter
 
 TAG: lib_java_seqfilter-1-0-4
 DATE: 01/10/2002
