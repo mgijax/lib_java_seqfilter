@@ -1,3 +1,13 @@
+TAG: lib_java_seqfilter-1-0-8
+DATE: 02/12/2002
+STAFF: sc
+RELEASE:
+CHANGES:
+1) Better error handling in getArgs()
+2) No longer have to add long options for new deciders. Long option array is
+   dynamically created in getArgs() based on the decider array passed to the 
+   constructor
+
 TAG: lib_java_seqfilter-1-0-7		
 DATE: 02/12/2002
 STAFF: sc
