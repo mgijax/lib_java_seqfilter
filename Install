@@ -21,8 +21,7 @@ USAGE="Usage: $0 [fordev | INSTALLDIR]\n"
 FORDEV=fordev
 
 # default path to the jar file installation directory
-#INSTALLDIR=/usr/local/mgi/lib/java1.2
-INSTALLDIR=/home/sc/work
+INSTALLDIR=/usr/local/mgi/lib/java1.2
 
 # full path to the source installation directory
 TOP=`pwd`
@@ -31,7 +30,7 @@ TOP=`pwd`
 TEMPDIR=$TOP/temp
 
 # lib_java_seqfilter package hierarchy where .class files will be created
-PACKAGEDIR=$TEMPDIR/org/jax/mgi/bio/seqfilter
+PACKAGEDIR=org/jax/mgi/bio/seqfilter
 
 # if we have more then one parameter echo usage
 if [ $# -gt 1 ]
@@ -73,8 +72,10 @@ cd src
 javac -d $TEMPDIR *.java
 
 # jar class files to $INSTALLDIR
+cd $TEMPDIR
 jar cvf $INSTALLDIR/seqfilter.jar $PACKAGEDIR/*.class
  
 # remove temp directory
+cd $TOP
 rm -rf $TEMPDIR 
 
