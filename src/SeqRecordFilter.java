@@ -1,6 +1,7 @@
 package org.jax.mgi.bio.seqfilter;
 
 import java.io.*;
+import java.util.*;
 import org.apache.regexp.*;
 import gnu.getopt.*;
 import org.jax.mgi.bio.seqrecord.*;	
@@ -30,10 +31,7 @@ public class SeqRecordFilter
 	        String[] args,	       // command line arguments (see getArgs()
 				       // method header) 
 		String logName,	       // full path name of this filter's log
-		SeqRecord sr,	       // sequence record object
-		boolean outputByRecord)	// true if one output file per record
-				        // false if all records per decider are
-					// output to one file
+		SeqRecord sr)	       // sequence record object
 	{
 	    // Purpose: creates a file reader object 
 	    //	    creates file writer objects for each Decider in 'args'
@@ -42,8 +40,6 @@ public class SeqRecordFilter
 	    // 		writes exception msg to stderr then exits	
 	    try
 	    {	
-		this.outputByRecord = outputByRecord;
-
 		// create an array to hold subset of 'deciders' based on 
 		// 'args'; create same size as 'deciders' 
 		this.decidersForThisFilterRun = new SeqDecider[deciders.length];
@@ -54,22 +50,15 @@ public class SeqRecordFilter
 		// create a reader for stdin
 		this.in = new BufferedReader(new InputStreamReader(System.in));
 
+		//DEBUG
+		//this.in = new BufferedReader(new FileReader(
+		//	"Place abs path to input file here"));
+
 		// the sequence record object
                 this.seqRec = sr;
 		
-		// grab deciders/output directory doubles from args
-		if(this.outputByRecord == true)
-		{
-			this.getArgs(deciders, args, outputByRecord);
-		}
-		
-		// Grab decider/outputFileMode/output file triples from args
-                // create a writer for each output file
-		else
-		{
-			
-			this.getArgs(deciders, args);
-		}
+		// do the decider to outputLocation mapping
+		this.getArgs(deciders, args);
 	    }
 	    catch(IOException e1)
             {
@@ -85,18 +74,15 @@ public class SeqRecordFilter
 				       // filter 
 		String[] args, 	       // command line arguments (see getArgs()
 				       // method header)	
-		SeqRecord sr,	       // sequence record object
-		boolean outputByRecord) // true if one output file per record
-                                        // false if all records per decider are
-                                        // output to one file
+		SeqRecord sr)	       // sequence record object
 	{
 	// Purpose: creates a file reader object
 	//          creates file writer objects for each Decider in 'args'
 	//          creates a default log file writer object 
+	// Assumes: There is a System property called 'LOG'
 
 		// call first constructor with Configurable abs log name
-		this(deciders, args, System.getProperty("LOG"), sr, 
-			outputByRecord);
+		this(deciders, args, System.getProperty("LOG"), sr); 
 	}
 	
 	//
@@ -104,106 +90,11 @@ public class SeqRecordFilter
 	//
 
 	public void getArgs(
-		SeqDecider[] sd,        // All possible Deciders for this filter
-		String[] args,          // command line arguments, see usage in Notes:
-		boolean outputByRecord) // assumed to be true
-	{
-	// Purpose: Creates a writer for sd
-        //          See Notes below
-        // Returns: nothing
-        // Assumes: nothing
-        // Effects: catches IOException, InterruptedException
-        //          write exception message to stderr
-        //          and exits. See the go() method for description of Exceptions
-        // Throws:  nothing
-        // Notes:
-        //      //
-        //      // command line usage
-	//	//	
-	//
-	//      The args array consists of doubles of information
-        //      1) a decider name indicating which Decider in 'sd' will be used
-	//         in this filter
-        //              e.g. --mouseBAC 
-        //      2) full path to output file directory for decider in 1)
-        //
-
-		// create an array of length 1 to hold the single writer which
-		// will be recycled to write to every output file
-		this.seqWriters = new BufferedLargeFileWriter[1];
-		
-		// create an array for output directories which correspond (by
-                // index) to Deciders in this.decidersForThisFilterRun array 
-		this.outputDirectories = new String[sd.length];
-
-		String optstring = "-"; //process args in order
-		LongOpt[] longopts = {
-                    new LongOpt("mouse", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("rat", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("rodent", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("human", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("genbank", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("sprot", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("htg", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("stsmouse", LongOpt.REQUIRED_ARGUMENT, null, 2),
-                    new LongOpt("mouseBAC", LongOpt.REQUIRED_ARGUMENT, null, 2)};
-		
-		/* create a Getopt object passing it:
-                   1) The name to display as the program name when logging
-                   2) The args
-                   3) description of valid options
-                   4) description of valid long options
-                */
-		Getopt g = new Getopt("Usage Error", args, optstring, longopts);
-
-		int c;          // the option returned from g.getopt()
-		String arg;     // the arg returned from g.getOptarg()
-
-		//get command line options in order, run them through the switch
-                while((c = g.getopt()) != -1)
-                {
-                    switch(c)
-                    {
-                        // case for all the longopts
-                        case 2:
-			    // get arg (an output directory) for this option
-                            arg = g.getOptarg();
-
-			    for(int i = 0; i < sd.length; i++)
-                            {
-                            	// if the 'sd's  name == the
-                                // command line long option, place
-                                // that Decider object in 'deciders
-                                // ForThisFilterRun' array
-                                if(sd[i].getName().equals(
-                               	    longopts[g.getLongind()].getName() ))
-                                {
-                                    this.decidersForThisFilterRun[
-                                        this.deciderCtr] = sd[i];
-
-				    // get the output directory for the decider
-				    this.outputDirectories[this.deciderCtr] =
-				        arg + File.separator;
-					//System.getProperty("file.separator");
-
-				    // increment the Decider object count
-                                    this.deciderCtr++;
-                                }
-                            }
-			    break;
-	    	
-		    	default:
-                       	    System.err.println("Error getopt() returned: " + c);
-		    }
-		}   
-	}
-
-	public void getArgs(
 		SeqDecider[] sd, // All possible Deciders for this filter
 		String[] args)   // command line arguments, see usage in Notes:
 	{
-	// Purpose: Maps Deciders from "sd" to output file names in "args"
-	//	    See Notes below
+	// Purpose: Maps Deciders from "sd" to output files or directories 
+	//           in "args"
         // Returns: nothing 
         // Assumes: nothing
         // Effects: catches IOException, InterruptedException 
@@ -219,13 +110,16 @@ public class SeqRecordFilter
 	//	1) an decider name indicating which Decider in 'sd' to map
 	//         the output file in 3)
 	//		e.g. --mouse or  --rat
-	//	2) option indicating whether to open the output
-	//	    file in append or overwrite mode e.g. -o | -a
-	//	3) full path to output file to be mapped to the Decider in 1)
-	//	   in 1)
+	//	2) option indicating output location is a file and to open that
+	//	    file in append or overwrite mode i.e. -o | -a 
+	//	    OR
+	//	   option indicating output location is a directory i.e. -d
+	//	3) full path to output file or directory to be mapped to 
+	//         the Decider in 1)
 	//	
 	//	e.g.
 	//	--mouse -o absOutputFileName
+	//	--mouseBAC -d absOutputDir
 	//	
 	//	//
 	//	// optstring syntax:
@@ -234,8 +128,9 @@ public class SeqRecordFilter
 	//	- = return args in order regardless of if opt longOpt or arg
 	//	: = return ':' if option w/o a required arg and return '?' 	
 	//	               if option is invalid 
-	//	a: = open file in append mode, argument required (filename)
-	//	o: = open file in create/overwrite mode, argument required
+	//	a: = required argument is a file - open it in append mode
+	//	o: = required argument is a file - open file in overwrite mode
+	//	d: = required argument is a directory
 	//
 	//	All opts return an integer value, short opts return their
  	//        ascii integer value, longopts return their assigned integer
@@ -243,12 +138,8 @@ public class SeqRecordFilter
 
 	    try
 	    {
-		// create an array for writers which correspond (by
-                // index) to Deciders in this.decidersForThisFilterRun array
-                this.seqWriters = new BufferedLargeFileWriter[sd.length];
-
 		// a String containing a description of the valid (short) optns 
-		String optstring = "-:a:o:";
+		String optstring = "-:a:o:d:";
 		
 		/* long options are defined by an array of "LongOpt" objects.
 		 the LongOpt constructor takes four params
@@ -282,8 +173,8 @@ public class SeqRecordFilter
 		Getopt g = new Getopt("Usage Error", args, optstring, longopts);
 		
 		// true = have a Decider  object and need to get  
-		// corresponding output file; this assures that pairs are 
-		// obtained
+		// 	corresponding output file; this assures that 
+		// 	decider/outputLocation pairs are obtained
 		boolean haveDecider = false;
 
 		int c;		// the option returned from g.getopt()
@@ -334,10 +225,10 @@ public class SeqRecordFilter
 				arg = g.getOptarg();	
 				
 				// open the file in append mode and place it in
-				// the seqWriters array parallel to the predic-
-				// array
-				this.seqWriters[this.deciderCtr] = new
-                                	BufferedLargeFileWriter(arg, true);
+				// the seqOutput Vector parallel to its decider
+				// in the decidersForThisFilterRun array
+				this.seqOutput.add(new
+                                	BufferedLargeFileWriter(arg, true));
 				// we are now expecting a Decider
 				haveDecider = false; 	
 				
@@ -358,9 +249,9 @@ public class SeqRecordFilter
 				arg = g.getOptarg();
 
 				// open the file in overwrite mode and place it 
-                                // in the seqWriters array  
-                                this.seqWriters[this.deciderCtr] = new 
-					BufferedLargeFileWriter(arg, false);
+                                // in the seqOutput Vector  
+                                this.seqOutput.add(new 
+					BufferedLargeFileWriter(arg, false));
                                 
 				// we are now expecting a Decider
 				haveDecider = false;    
@@ -369,7 +260,27 @@ public class SeqRecordFilter
                                 this.deciderCtr++;           
                             }
                             break;
-		
+			case 'd':
+			    if(haveDecider == false)
+                            {
+                                System.err.println("ERROR in getArgs(): " +
+                                        "Don't have a decider!!");
+                            }
+			    else
+			    {
+				// get arg (and output directory for this option
+                                arg = g.getOptarg();
+
+				// Create a File object, add to seqOutput Vector
+				this.seqOutput.add(new File(arg));
+
+				// we are now expecting a Decider
+                                haveDecider = false;
+
+                                // increment the Decider object count
+                                this.deciderCtr++;
+			    }
+			    break;
 			case ':':
 				throw new IOException(
 					"Missing argument for option");
@@ -428,14 +339,14 @@ public class SeqRecordFilter
 	// Throws: nothing
 	    try
 	    { 
-		// tracking time elapsed for this filter run
+		// track time elapsed for this filter run
 		long totalRunTimeMinutes = 0;	
 		long stopTime = 0;
 		long startTime = System.currentTimeMillis();
 		
 		// priming read of a sequence record
 		this.seqRec.readText(this.in);
-		
+
 		// seqRec.getLine() returns the last line that it read when
 		// reading itself. If it returns null the last line of the last
 		// sequence record has been read. 
@@ -448,7 +359,7 @@ public class SeqRecordFilter
 		
 		// Capture the stop time of this filter
 		stopTime = System.currentTimeMillis();
-	
+
 		// Figure the run time of this filter and log it
                 totalRunTimeMinutes = ((stopTime - startTime) / 1000);
                 this.logGeneral("Total runtime in seconds: " +
@@ -457,18 +368,19 @@ public class SeqRecordFilter
 		// log statistics from this filter run (see the method for info)
 		logStats();
 
-		// close all readers and writers
+		// close all open readers and writers
                 this.in.close();
                 this.log.close();
                 
-		// if we are writing output by decider, close the output file(s)		// note: when writing to separate records we close as soon as 
-		// we write - see processRecord method. 	
-		if(this.outputByRecord == false)
-		{ 
-			for(int i = 0; i < this.deciderCtr; i++)
-                	{
-                        	this.seqWriters[i].close();
-                	}
+		// if seqOutput contains a writer (not a dir),  close it
+		for(int i = 0; i < this.deciderCtr; i++)
+		{
+			if(this.seqOutput.get(i) instanceof 
+					BufferedLargeFileWriter)
+			{
+				((BufferedLargeFileWriter)(
+					this.seqOutput.get(i))).close();
+			}
 		}
 
 	    }
@@ -493,37 +405,50 @@ public class SeqRecordFilter
  	
 	}
 
-	private void processRecord() throws IOException
+	private void processRecord() 
 	{
+	// Purpose: 
+        // Returns: 
+        // Assumes: the constructors have initialized all readers and writers,
+	//	    for deciders whose outputLocation is a file
+        //          a sequence record object, and created Decider and
+        //          output arrays
+        // Effects: writes files to the filesystem
+        //          catches Interrupted and IO exceptions and writes their
+        //          messages stderr
+        //               IOException indicates failed or interrupted I/O
+        //                 operations e.g. the path/file does not exist
+        //               InterruptedException indicates another thread has
+        //                interrupted this thread
+
 	    try
 	    {		
 	        // loop through the Deciders for this filter run
             	for(int i = 0; i < this.deciderCtr; i++)
             	{
-                    //if Decider returns true for seqRec
+                    // if Decider returns true for seqRec
                     if(this.decidersForThisFilterRun[i].isA(
                             this.seqRec) == true)
                     {
-			// write it to a new file named as follows:
-			// the output directory for the decider + 
-			// the seqIdVersin for the sequence record
-			if(this.outputByRecord == true)
+			// if seqOutput[i] is type File then we write 
+			// the seqRec text to its own file
+			if(this.seqOutput.get(i) instanceof File)
 			{
-			    				
-			    this.seqWriters[0] = new 
+			    // write text to a new file named seqIdVersion in	
+			    // the output directory for the decider 
+			    this.singleSeqWriter = new 
 			        BufferedLargeFileWriter(
-			   	    this.outputDirectories[i] + 
+			   	    ((File)(this.seqOutput.get(i))).getPath() + 
+				    File.separator +
 				    this.seqRec.getVersion(), false);
-				
-			    this.seqWriters[0].write(this.seqRec.getText());	
-			    this.seqWriters[0].close();
+			    this.singleSeqWriter.write(this.seqRec.getText());	
+			    this.singleSeqWriter.close();
 			}
-			// write it to the file writer corresponding
-			// to the decider
+			// then it is a writer, simply write
 			else
 			{
-			    this.seqWriters[i].write(
-                                this.seqRec.getText());
+			    ((BufferedLargeFileWriter)this.seqOutput.get(i)).
+                                write(this.seqRec.getText());
 			}
 		    }
 		}
@@ -531,10 +456,17 @@ public class SeqRecordFilter
 	    catch(InterruptedException e2)
             {
                 System.err.println(
-                    "InterruptedException in SeqRecordFilter.getArgs(): "
+                    "InterruptedException in SeqRecordFilter.processRecord(): "
                     + e2.getMessage());
                 System.exit(1);
             }
+	    catch (IOException e3)
+	    {
+		System.err.println(
+		    "InterruptedException in SeqRecordFilter.processRecord(): "
+		    + e3.getMessage());
+		System.exit(1);
+	    }
 	}
 
 	private void logStats() throws IOException
@@ -548,14 +480,17 @@ public class SeqRecordFilter
 		for (int i = 0; i < this.deciderCtr; i++)
 		{
 			this.log.write("Count statistics for " + 
-				this.decidersForThisFilterRun[i].getName() + "\n");
+				this.decidersForThisFilterRun[i].getName() + 
+				"\n");
 			this.log.write("    Total records: ");
 			this.log.write(
-				this.decidersForThisFilterRun[i].getAllCtr() + "\n");
+				this.decidersForThisFilterRun[i].getAllCtr() + 
+				"\n");
 			this.log.write(
 				"    Records for this filter: ");
 			this.log.write(
-				this.decidersForThisFilterRun[i].getTrueCtr() + "\n");
+				this.decidersForThisFilterRun[i].getTrueCtr() +
+				 "\n");
 			this.log.write("\n");
 		}
 	}
@@ -577,7 +512,7 @@ public class SeqRecordFilter
 	// the input stream until EOF
 	private SeqRecord seqRec;
 
-	// the number of Deciders for this filter run we use this because
+	// the number of Deciders for this filter run. We use this because
 	// decidersForThisFilterRun.length gives us total length of array
 	// not number of array elements filled.
 	private int deciderCtr = 0;		 
@@ -591,14 +526,11 @@ public class SeqRecordFilter
 	// Decider objects for deciders requested on the command line  
 	private SeqDecider[] decidersForThisFilterRun;
 
-	// file writers which correspond, by index, to 
-	// 'decidersForThisFilterRun' when 'this.outputByRecord' == false
-	private BufferedLargeFileWriter[] seqWriters;
+	// Vector holds filewriters or directories which correspond, by index, 
+	// to 'decidersForThisFilterRun' 
+	private Vector seqOutput = new Vector();
 
-	// output directories which correspond, by index, to
-	// 'decidersForThisFilterRun' when 'this.outputByRecord' == true
-	private String[] outputDirectories;
-		
-	// true if one output file per record; false if one ouput file/decider
-	private boolean outputByRecord;
+	// writer for those deciders which require single record/file output
+	private BufferedLargeFileWriter singleSeqWriter;
+
 }
