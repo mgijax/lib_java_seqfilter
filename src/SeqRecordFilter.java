@@ -4,7 +4,7 @@ import java.io.*;
 import org.apache.regexp.*;
 import gnu.getopt.*;
 import org.jax.mgi.bio.seqrecord.*;	
-import BufferedLargeFileWriter;
+import org.jax.mgi.shr.unix.*;
 
 public class SeqRecordFilter
 {
