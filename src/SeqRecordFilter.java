@@ -53,7 +53,7 @@ public class SeqRecordFilter
 
 		// create a reader for stdin
 		this.in = new BufferedReader(new InputStreamReader(System.in));
-		//this.in = new BufferedReader(new FileReader("/home/sc/work/seqdb_engineDev/data/downloads/ftp.ncbi.nlm.nih.gov/genbank/gbhtg1.seq"));
+
 		// the sequence record object
                 this.seqRec = sr;
 		
@@ -445,9 +445,6 @@ public class SeqRecordFilter
 			// read the next record
 			this.seqRec.readText(this.in);
 		}
-		
-		// process the last record
-		//processRecord();
 		
 		// Capture the stop time of this filter
 		stopTime = System.currentTimeMillis();
