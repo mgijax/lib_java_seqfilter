@@ -21,7 +21,7 @@ USAGE="Usage: $0 [fordev | INSTALLDIR]\n"
 FORDEV=fordev
 
 # default path to the jar file installation directory
-INSTALLDIR=/usr/local/mgi/lib/java1.2
+INSTALLDIR=/usr/local/mgi/lib/java
 
 # full path to the source installation directory
 TOP=`pwd`
