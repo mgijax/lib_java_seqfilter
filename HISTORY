@@ -1,3 +1,11 @@
+TAG: lib_java_seqfilter-1-0-3
+DATE: 12/21/2001
+STAFF: sc, blk
+RELEASE:
+CHANGES:
+1) Minor changes. Stable version to install and use to build MASS/mblast
+   dbs
+
 TAG: lib_java_seqfilter-1-0-2
 DATE: 12/10/2001
 STAFF: sc, blk
