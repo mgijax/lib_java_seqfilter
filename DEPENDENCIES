@@ -1,0 +1,17 @@
+#
+# Dependencies for lib_java_seqfilter 
+
+# Products
+#  Product      Tag                     Comments
+#---------------------------------------------------------------------------
+lib_java_seqrecord
+lib_java_mgidrvmgr
+lib_java_?	// where RunCommand and BufferedLargeFileWriter will reside
+
+#! External Products
+#  Product      Tag                     Comments
+#---------------------------------------------------------------------------
+gnu.getopt
+apache.regexp
+jConnect
+JNDI
