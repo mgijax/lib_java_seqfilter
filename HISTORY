@@ -1,3 +1,10 @@
+TAG: lib_java_seqfilter-1-0-7		
+DATE: 02/12/2002
+STAFF: sc
+RELEASE:
+CHANGES:
+1) Added new long options for new deciders to SeqRecordFilter.getArgs()
+
 TAG: lib_java_seqfilter-1-0-6
 DATE: 01/17/2002
 STAFF: sc
