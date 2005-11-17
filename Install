@@ -32,6 +32,9 @@ TEMPDIR=$TOP/temp
 # lib_java_seqfilter package hierarchy where .class files will be created
 PACKAGEDIR=org/jax/mgi/bio/seqfilter
 
+CLASSPATH=.:/usr/local/java1.4/java-getopt-1.0.10.jar:/usr/local/mgi/live/lib/java/seqrecord.jar:${CLASSPATH}
+export CLASSPATH
+
 # if we have more then one parameter echo usage
 if [ $# -gt 1 ]
 then
