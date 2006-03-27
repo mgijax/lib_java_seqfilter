@@ -1,25 +1,23 @@
 <?xml version="1.0"?>
-<!-- Enter the name of your current project here
- -->
+<!-- This XML script is used to build the lib_java_seqfilter product.
+-->
 <project name="lib_java_seqfilter" default="compile" basedir=".">
 
-   <!-- Get the system environment variables.
-    -->
+   <!-- Get the system environment variables and define any other system
+        properties needed by the build.
+   -->
    <property environment="env"/>
-
-   <!-- Enter the name of your jar file here minus the dot jar suffix
-    -->
    <property name="jar.name" value="seqfilter"/>
-   <property name="classpath" value="${env.MGI_JAVALIB}/core.jar:${env.MGI_JAVALIB}/seqrecord.jar:/usr/local/java/java-getopt-1.0.10.jar:${env.SYBASE}/jConnect-5_5/classes/jconn2.jar"/>
+   <property name="classpath" value="${env.MGI_JAVALIB}/core.jar:${env.MGI_JAVALIB}/seqrecord.jar:${env.JGETOPT}:${env.JCONNECT}"/>
 
-   <!-- To override property definitions in the following
-        properties file, add new definitions in preceding lines.
-        The first definition of a property takes precedence
-    -->
-   <property file="${env.MGICONFIG}/etc/build.lib.properties"/>
-
-   <!-- Universal targets get included here
-    -->
+   <!-- Import the universal targets.
+   -->
    <import file="${env.MGICONFIG}/etc/build.lib.targets.xml"/>
-   <import file="build.targets.xml"/>
+
+   <!-- Define product specific targets.
+   -->
+   <target name="buildall" description="Executes task 'all'"
+           depends="clean, jar, link">
+   </target>
+
 </project>
