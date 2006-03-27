@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<project name="build.targets" basedir=".">
-   <target name="buildall" description="Executes task 'all'"
-           depends="clean, jar, link">
-   </target>
-</project>
