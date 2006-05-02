@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!-- This XML script is used to build the lib_java_seqfilter product.
+-->
+<project name="lib_java_seqfilter" default="compile" basedir=".">
+
+   <!-- Get the system environment variables and define any other system
+        properties needed by the build.
+   -->
+   <property environment="env"/>
+   <property name="jar.name" value="seqfilter"/>
+   <property name="classpath" value="${env.MGI_JAVALIB}/core.jar:${env.MGI_JAVALIB}/seqrecord.jar:${env.JGETOPT}:${env.JCONNECT}"/>
+
+   <!-- Import the universal targets.
+   -->
+   <import file="${env.MGICONFIG}/etc/build.lib.targets.xml"/>
+
+   <!-- Define product specific targets.
+   -->
+   <target name="buildall" description="Executes task 'all'"
+           depends="clean, jar, link">
+   </target>
+
+</project>
