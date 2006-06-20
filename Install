@@ -12,6 +12,6 @@
 
 cd `dirname $0`
 
-. Configuration
+. ./Configuration
 
 $ANT buildall
