@@ -8,7 +8,7 @@
    -->
    <property environment="env"/>
    <property name="jar.name" value="seqfilter"/>
-   <property name="classpath" value="${env.MGI_JAVALIB}/core.jar:${env.MGI_JAVALIB}/seqrecord.jar:${env.JGETOPT}:${env.JCONNECT}"/>
+   <property name="classpath" value="${env.MGI_JAVALIB}/core.jar:${env.MGI_JAVALIB}/seqrecord.jar:${env.JGETOPT}"/>
 
    <!-- Import the universal targets.
    -->
